@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 
 	owm "github.com/briandowns/openweathermap"
 	tgbotapi "gopkg.in/telegram-bot-api.v4"
@@ -67,8 +68,24 @@ func getWeather(apiKey, city string) (string, error) {
 		return "", err
 	}
 
-	weatherText := fmt.Sprintf("Погода в %s:\nТемпература: %.2f°C\nОписание: %s",
-		w.Name, w.Main.Temp, w.Weather[0].Description)
+
+	var loc *time.Location
+	if w.Sys.Country != "" {
+		timezoneOffset := int(w.Timezone)
+		loc = time.FixedZone("", timezoneOffset)
+	} else {
+		// Use a default time zone if the country code is not available
+		log.Println("Код страны недоступен.")
+		loc = time.UTC
+	}
+
+	currentTime := time.Now().In(loc)
+
+
+	temperature := int(w.Main.Temp)
+
+	weatherText := fmt.Sprintf("Погода в %s:\nТемпература: %d°C\nОписание: %s\nТекущее время: %s",
+		w.Name, temperature, w.Weather[0].Description, currentTime.Format("2006-01-02 15:04:05"))
 
 	return weatherText, nil
 }
